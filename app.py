@@ -45,9 +45,9 @@ def ler_arquivo_bytes(uploaded_file, mapa_colunas_obrigatorias):
                 df = pl.read_csv(io.BytesIO(bytes_data), separator=",", infer_schema_length=0)
             df = df.select(pl.all().cast(pl.Utf8, strict=False))
         else:
-            # BLOCO EXCEL: LER TODAS AS ABAS com fastexcel (bytes)
+            # BLOCO EXCEL: LER TODAS AS ABAS com fastexcel (AGORA COM OS BYTES PUROS)
             import fastexcel
-            wb = fastexcel.read_excel(io.BytesIO(bytes_data))
+            wb = fastexcel.read_excel(bytes_data)
             abas_df = []
             for aba in wb.sheet_names:
                 df_aba = wb.load_sheet(aba).to_polars()
@@ -59,6 +59,43 @@ def ler_arquivo_bytes(uploaded_file, mapa_colunas_obrigatorias):
                 df = pl.concat(abas_df, how="diagonal")
             else:
                 df = pl.DataFrame()
+            
+    except Exception as e:
+        st.error(f"Erro ao ler o arquivo {uploaded_file.name}: {e}")
+        return pl.DataFrame()
+
+    if df.is_empty():
+        return pl.DataFrame()
+
+    novos_nomes = {c: normalizar_coluna(c) for c in df.columns}
+    df = df.rename(novos_nomes)
+
+    cols_selecionar = []
+    renomear_alvo = {}
+    
+    for col_desejada in mapa_colunas_obrigatorias:
+        col_norm = normalizar_coluna(col_desejada)
+        if col_norm in df.columns:
+            cols_selecionar.append(col_norm)
+            renomear_alvo[col_norm] = col_desejada
+        else:
+            encontrou = False
+            for col_real in df.columns:
+                if col_norm.lower() in col_real.lower():
+                    cols_selecionar.append(col_real)
+                    renomear_alvo[col_real] = col_desejada
+                    encontrou = True
+                    break
+            
+            if not encontrou:
+                df = df.with_columns(pl.lit(None).cast(pl.Utf8).alias(col_norm))
+                cols_selecionar.append(col_norm)
+                renomear_alvo[col_norm] = col_desejada
+
+    if cols_selecionar:
+        return df.select(cols_selecionar).rename(renomear_alvo)
+    
+    return pl.DataFrame()
             
     except Exception as e:
         st.error(f"Erro ao ler o arquivo {uploaded_file.name}: {e}")
