@@ -78,8 +78,8 @@ def ler_arquivo_bytes(uploaded_file, mapa_colunas_obrigatorias):
 # INTERFACE DO USUÁRIO
 # ==========================================
 st.title("📦 Painel de SLA")
-st.markdown("Ferramenta oficial para processamento de volumetria de entregas e bipagens.")
-st.info("A equipe pode anexar os relatórios ao lado para gerar o cruzamento instantâneo via motor Polars.")
+st.markdown("CARREGAR OS ARQUIVOS EXTARÍDOS DO JMS.")
+st.info("SLA DO DIA")
 
 # --- BARRA LATERAL ---
 with st.sidebar:
@@ -97,42 +97,25 @@ with st.sidebar:
     st.subheader("Anexar Relatórios")
     arquivo_entregas = st.file_uploader("Upload do Relatório de Entregas", type=["xlsx", "csv"])
     arquivo_bipagens = st.file_uploader("Upload do Relatório de Bipagens", type=["xlsx", "csv"])
+    arquivo_prazo = st.file_uploader("Upload do Relatório de Prazos", type=["xlsx", "csv"])
+    arquivo_entrega_realizada = st.file_uploader("Upload do Relatório de Entregas Realizadas", type=["xlsx", "csv"])
 
 # ==========================================
 # PROCESSAMENTO
 # ==========================================
 if st.button("🚀 Processar SLA do Dia", use_container_width=True, type="primary"):
-    if arquivo_entregas and arquivo_bipagens:
+    # Agora ele exige que as 4 caixas estejam preenchidas
+    if arquivo_entregas and arquivo_bipagens and arquivo_prazo and arquivo_entrega_realizada:
         with st.spinner("Lendo arquivos e cruzando dados... Isso pode levar alguns segundos."):
             
-            # Ajuste as colunas abaixo conforme o padrão exato da sua planilha
+            # --- Suas colunas obrigatórias ---
             colunas_entregas = ["ID Pedido", "Data Entrega", "Status"] 
             colunas_bipagens = ["ID Pedido", "Data Bipagem", "Operador"]
+            colunas_prazo = ["ID Pedido", "Data Limite"] # Altere conforme sua planilha
+            colunas_realizada = ["ID Pedido", "Data Conclusao"] # Altere conforme sua planilha
             
-            # Leitura otimizada
+            # Lendo os 4 arquivos com a função otimizada
             df_entregas = ler_arquivo_bytes(arquivo_entregas, colunas_entregas)
             df_bipagens = ler_arquivo_bytes(arquivo_bipagens, colunas_bipagens)
-            
-            if not df_entregas.is_empty() and not df_bipagens.is_empty():
-                
-                # Exemplo de Cruzamento (Merge) via Polars
-                df_final = df_entregas.join(df_bipagens, on="ID Pedido", how="left")
-                
-                st.success("✅ Processamento concluído com sucesso!")
-                
-                # Exibe uma amostra dos dados na tela
-                st.dataframe(df_final.head(10))
-                
-                # Botão de Download
-                csv = df_final.write_csv(separator=";")
-                st.download_button(
-                    label="📥 Baixar Relatório Final (CSV)",
-                    data=csv,
-                    file_name=f"SLA_Final_{data_hoje_br.strftime('%d%m%Y')}.csv",
-                    mime="text/csv",
-                    type="primary"
-                )
-            else:
-                st.error("As planilhas estão vazias ou as colunas obrigatórias não foram encontradas.")
-    else:
-        st.warning("⚠️ Por favor, anexe os dois relatórios na barra lateral antes de processar.")
+            df_prazo = ler_arquivo_bytes(arquivo_prazo, colunas_prazo)
+            df_realizada = ler_arquivo_bytes(arquivo_entrega_realizada, colunas_realizada)
