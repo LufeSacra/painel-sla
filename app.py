@@ -111,7 +111,7 @@ with st.sidebar:
     arquivo_entregas = st.file_uploader("Carregue os arquivos: Gestão de Bases", type=["xlsx", "csv"], accept_multiple_files=True)
     arquivo_bipagens = st.file_uploader("Carregue os arquivos: Bipagens SC 00h à 06h", type=["xlsx", "csv"], accept_multiple_files=True)
     arquivo_prazo = st.file_uploader("Carregue os arquivos: Prazos por CEP's", type=["xlsx", "csv"], accept_multiple_files=True)
-    arquivo_entrega_realizada = st.file_uploader("Carregue os arquivos: Entrega realizada "(SLA)" ", type=["xlsx", "csv"], accept_multiple_files=True)
+    arquivo_entrega_realizada = st.file_uploader("Carregue os arquivos: Entrega realizada SLA", type=["xlsx", "csv"], accept_multiple_files=True)
 
 # ==========================================
 # PROCESSAMENTO
