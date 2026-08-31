@@ -78,7 +78,7 @@ def ler_arquivo_bytes(uploaded_file, mapa_colunas_obrigatorias):
 # INTERFACE DO USUÁRIO
 # ==========================================
 st.title("📦 Painel de SLA")
-st.markdown("CARREGAR OS ARQUIVOS EXTARÍDOS DO JMS.")
+st.markdown("CARREGAR OS ARQUIVOS BAIXADOS DO JMS.")
 st.info("SLA DO DIA")
 
 # --- BARRA LATERAL ---
