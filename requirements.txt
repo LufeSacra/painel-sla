@@ -1,1 +1,5 @@
-streamlit, polars, pandas, fastexcel e openpyxl
+streamlit
+polars
+pandas
+fastexcel
+openpyxl
