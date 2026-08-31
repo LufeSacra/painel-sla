@@ -109,7 +109,10 @@ st.markdown("Basta carregar os arquivos gerados no JMS.")
 
 with st.sidebar:
     st.header("⚙️ Configurações")
-    data_sla = st.date_input("📅 Data de Referência do SLA", datetime.date.today(), disabled=True)
+    # Força o fuso horário de Brasília/Bahia (UTC-3)
+    fuso_br = datetime.timezone(datetime.timedelta(hours=-3))
+    data_hoje_br = datetime.datetime.now(fuso_br).date()
+    data_sla = st.date_input("📅 Data de Referência do SLA", data_hoje_br, disabled=True)
     st.info("SLA DO DIA")
 
 st.markdown("---")
