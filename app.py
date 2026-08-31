@@ -110,7 +110,7 @@ st.markdown("Basta carregar os arquivos gerados no JMS.")
 with st.sidebar:
     st.header("⚙️ Configurações")
     data_sla = st.date_input("📅 Data de Referência do SLA", datetime.date.today(), disabled=True)
-    st.info("SLA DO DIA.")
+    st.info("SLA DO DIA")
 
 st.markdown("---")
 
