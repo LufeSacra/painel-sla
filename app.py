@@ -109,7 +109,7 @@ st.markdown("Basta carregar os arquivos gerados no JMS.")
 
 with st.sidebar:
     st.header("⚙️ Configurações")
-    data_sla = st.date_input("📅 Data de Referência do SLA", datetime.date.today())
+    data_sla = st.date_input("📅 Data de Referência do SLA", datetime.date.today(), disabled=True)
     st.info("A equipe pode anexar os relatórios ao lado para gerar o cruzamento instantâneo via motor Polars.")
 
 st.markdown("---")
