@@ -105,7 +105,7 @@ def ler_arquivo_bytes(uploaded_file, mapa_colunas_obrigatorias):
 
 # Layout Visual no Streamlit
 st.title("🚀 Painel de SLA Diário - Regional BA")
-st.markdown("Ferramenta oficial para processamento de volumetria de entregas e bipagens.")
+st.markdown("Basta carregar os arquivos gerados no JMS.")
 
 with st.sidebar:
     st.header("⚙️ Configurações")
