@@ -17,7 +17,7 @@ def normalizar_coluna(nome):
     return str(nome).strip().lower()
 
 def ler_arquivo_bytes(uploaded_file, mapa_colunas_obrigatorias):
-    """Lê o arquivo carregado forçando o motor Calamine para economizar memória na nuvem."""
+    """Lê um único arquivo forçando o motor Calamine para economizar memória na nuvem."""
     if uploaded_file is None:
         return pl.DataFrame()
     
@@ -31,7 +31,6 @@ def ler_arquivo_bytes(uploaded_file, mapa_colunas_obrigatorias):
             except Exception:
                 df = pl.read_csv(io.BytesIO(bytes_data), separator=",", infer_schema_length=0)
         else:
-            # Lendo Excel com o motor de altíssima performance e baixo consumo de memória
             df = pl.read_excel(bytes_data, engine="calamine")
             
     except Exception as e:
@@ -41,7 +40,6 @@ def ler_arquivo_bytes(uploaded_file, mapa_colunas_obrigatorias):
     if df.is_empty():
         return pl.DataFrame()
 
-    # Transforma todas as colunas em texto para evitar erros de tipagem
     df = df.select(pl.all().cast(pl.Utf8, strict=False))
 
     novos_nomes = {c: normalizar_coluna(c) for c in df.columns}
@@ -74,48 +72,88 @@ def ler_arquivo_bytes(uploaded_file, mapa_colunas_obrigatorias):
     
     return pl.DataFrame()
 
+def processar_lista_arquivos(lista_arquivos, colunas_obrigatorias):
+    """Lê vários arquivos da mesma caixinha e empilha todos em um só DataFrame."""
+    if not lista_arquivos:
+        return pl.DataFrame()
+    
+    dfs = []
+    for arquivo in lista_arquivos:
+        df = ler_arquivo_bytes(arquivo, colunas_obrigatorias)
+        if not df.is_empty():
+            dfs.append(df)
+    
+    if dfs:
+        # how="diagonal" empilha de forma inteligente mesmo se a ordem das colunas mudar
+        return pl.concat(dfs, how="diagonal") 
+    return pl.DataFrame()
+
 # ==========================================
 # INTERFACE DO USUÁRIO
 # ==========================================
 st.title("📦 Painel de SLA")
-st.markdown("CARREGAR OS ARQUIVOS BAIXADOS DO JMS.")
-st.info("SLA DO DIA")
+st.markdown("Ferramenta oficial para processamento de volumetria de entregas e bipagens.")
+st.info("A equipe pode anexar os relatórios ao lado para gerar o cruzamento instantâneo via motor Polars.")
 
 # --- BARRA LATERAL ---
 with st.sidebar:
     st.header("⚙️ Configurações")
     
-    # Força o fuso horário (UTC-3)
     fuso_br = datetime.timezone(datetime.timedelta(hours=-3))
     data_hoje_br = datetime.datetime.now(fuso_br).date()
     
-    # Calendário bloqueado na data de hoje
     data_sla = st.date_input("📅 Data de Referência do SLA", data_hoje_br, disabled=True)
     
     st.divider()
     
     st.subheader("Anexar Relatórios")
-    arquivo_entregas = st.file_uploader("Upload do Relatório de Entregas", type=["xlsx", "csv"])
-    arquivo_bipagens = st.file_uploader("Upload do Relatório de Bipagens", type=["xlsx", "csv"])
-    arquivo_prazo = st.file_uploader("Upload do Relatório de Prazos", type=["xlsx", "csv"])
-    arquivo_entrega_realizada = st.file_uploader("Upload do Relatório de Entregas Realizadas", type=["xlsx", "csv"])
+    st.caption("Você pode arrastar VÁRIOS arquivos para dentro da mesma caixa.")
+    
+    # accept_multiple_files=True permite jogar vários arquivos de uma vez
+    arquivo_entregas = st.file_uploader("Upload: Relatório de Entregas", type=["xlsx", "csv"], accept_multiple_files=True)
+    arquivo_bipagens = st.file_uploader("Upload: Relatório de Bipagens", type=["xlsx", "csv"], accept_multiple_files=True)
+    arquivo_prazo = st.file_uploader("Upload: Relatório de Prazos", type=["xlsx", "csv"], accept_multiple_files=True)
+    arquivo_entrega_realizada = st.file_uploader("Upload: Relatório de Entregas Realizadas", type=["xlsx", "csv"], accept_multiple_files=True)
 
 # ==========================================
 # PROCESSAMENTO
 # ==========================================
 if st.button("🚀 Processar SLA do Dia", use_container_width=True, type="primary"):
-    # Agora ele exige que as 4 caixas estejam preenchidas
+    
+    # Verifica se pelo menos um arquivo foi colocado em CADA uma das 4 caixas
     if arquivo_entregas and arquivo_bipagens and arquivo_prazo and arquivo_entrega_realizada:
-        with st.spinner("Lendo arquivos e cruzando dados... Isso pode levar alguns segundos."):
+        with st.spinner("Empilhando arquivos e cruzando dados... Isso pode levar alguns segundos."):
             
-            # --- Suas colunas obrigatórias ---
             colunas_entregas = ["ID Pedido", "Data Entrega", "Status"] 
             colunas_bipagens = ["ID Pedido", "Data Bipagem", "Operador"]
-            colunas_prazo = ["ID Pedido", "Data Limite"] # Altere conforme sua planilha
-            colunas_realizada = ["ID Pedido", "Data Conclusao"] # Altere conforme sua planilha
+            colunas_prazo = ["ID Pedido", "Data Limite"] 
+            colunas_realizada = ["ID Pedido", "Data Conclusao"] 
             
-            # Lendo os 4 arquivos com a função otimizada
-            df_entregas = ler_arquivo_bytes(arquivo_entregas, colunas_entregas)
-            df_bipagens = ler_arquivo_bytes(arquivo_bipagens, colunas_bipagens)
-            df_prazo = ler_arquivo_bytes(arquivo_prazo, colunas_prazo)
-            df_realizada = ler_arquivo_bytes(arquivo_entrega_realizada, colunas_realizada)
+            # O processador agora junta todos os arquivos de cada caixa antes de continuar
+            df_entregas = processar_lista_arquivos(arquivo_entregas, colunas_entregas)
+            df_bipagens = processar_lista_arquivos(arquivo_bipagens, colunas_bipagens)
+            df_prazo = processar_lista_arquivos(arquivo_prazo, colunas_prazo)
+            df_realizada = processar_lista_arquivos(arquivo_entrega_realizada, colunas_realizada)
+            
+            if not df_entregas.is_empty() and not df_bipagens.is_empty() and not df_prazo.is_empty() and not df_realizada.is_empty():
+                
+                # Exemplo de Cruzamento (Merge) via Polars
+                df_final = df_entregas.join(df_bipagens, on="ID Pedido", how="left")
+                # Aqui você pode adicionar as lógicas de join com df_prazo e df_realizada depois
+                
+                st.success("✅ Processamento concluído com sucesso!")
+                
+                st.dataframe(df_final.head(10))
+                
+                csv = df_final.write_csv(separator=";")
+                st.download_button(
+                    label="📥 Baixar Relatório Final (CSV)",
+                    data=csv,
+                    file_name=f"SLA_Final_{data_hoje_br.strftime('%d%m%Y')}.csv",
+                    mime="text/csv",
+                    type="primary"
+                )
+            else:
+                st.error("Algumas planilhas estão vazias ou não possuem as colunas obrigatórias.")
+    else:
+        st.warning("⚠️ Por favor, anexe pelo menos um arquivo em TODAS as 4 caixas na barra lateral antes de processar.")
