@@ -92,9 +92,7 @@ def processar_lista_arquivos(lista_arquivos, colunas_obrigatorias):
 # INTERFACE DO USUÁRIO
 # ==========================================
 st.title("📦 Painel de SLA")
-st.markdown("Ferramenta oficial para processamento de volumetria de entregas e bipagens.")
-st.info("A equipe pode anexar os relatórios ao lado para gerar o cruzamento instantâneo via motor Polars.")
-
+st.markdown("CARREGAR NA BARRA LATERAL OS ARQUIVOS BAIXADOS DO JMS")
 # --- BARRA LATERAL ---
 with st.sidebar:
     st.header("⚙️ Configurações")
@@ -107,13 +105,13 @@ with st.sidebar:
     st.divider()
     
     st.subheader("Anexar Relatórios")
-    st.caption("Você pode arrastar VÁRIOS arquivos para dentro da mesma caixa.")
+    st.caption("Arraste aqui os arquivos para dentro da caixa correspondente.")
     
     # accept_multiple_files=True permite jogar vários arquivos de uma vez
-    arquivo_entregas = st.file_uploader("Upload: Relatório de Entregas", type=["xlsx", "csv"], accept_multiple_files=True)
-    arquivo_bipagens = st.file_uploader("Upload: Relatório de Bipagens", type=["xlsx", "csv"], accept_multiple_files=True)
-    arquivo_prazo = st.file_uploader("Upload: Relatório de Prazos", type=["xlsx", "csv"], accept_multiple_files=True)
-    arquivo_entrega_realizada = st.file_uploader("Upload: Relatório de Entregas Realizadas", type=["xlsx", "csv"], accept_multiple_files=True)
+    arquivo_entregas = st.file_uploader("Carregue os arquivos: Gestão de Bases", type=["xlsx", "csv"], accept_multiple_files=True)
+    arquivo_bipagens = st.file_uploader("Carregue os arquivos: Bipagens SC 00h à 06h", type=["xlsx", "csv"], accept_multiple_files=True)
+    arquivo_prazo = st.file_uploader("Carregue os arquivos: Prazos por CEP's", type=["xlsx", "csv"], accept_multiple_files=True)
+    arquivo_entrega_realizada = st.file_uploader("Carregue os arquivos: Entrega realizada "(SLA)" ", type=["xlsx", "csv"], accept_multiple_files=True)
 
 # ==========================================
 # PROCESSAMENTO
