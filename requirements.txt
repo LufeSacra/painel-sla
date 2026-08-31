@@ -1,5 +1,5 @@
 streamlit
 polars
 pandas
-fastexcel
+python-calamine
 openpyxl
